@@ -348,24 +348,13 @@ for project in projects:
         df_assets.drop('Price', axis=1, inplace=True)
         df_assets.drop('Volume', axis=1, inplace=True)
     for token in project.tokens_NFT:
-        if token.price_hist:
-            df_price=token.price_hist(token.blockchain,difference_dates+3,token.contract_address)
-            df_assets = pd.merge(df_assets,df_price, on='upload_date', how='left')
-            mask = df_assets[f'{token.name}_price'] == 0
-            df_assets.loc[mask, f'{token.name}_price'] = df_assets.loc[mask, 'Price']
-            mask = df_assets[f'{token.name}_price'].isna()
-            idx = df_assets[f'{token.name}_price'].first_valid_index()
-            df_assets.loc[idx:, f'{token.name}_price'].fillna(method='ffill', inplace=True)
-            df_assets.drop('Price', axis=1, inplace=True)
-        if token.vol_hist:
-            df_volume=token.vol_hist(token.blockchain,difference_dates+3,token.contract_address)
-            df_assets = pd.merge(df_assets,df_volume, on='upload_date', how='left')
-            mask = df_assets[f'{token.name}_volume'] == 0
-            df_assets.loc[mask, f'{token.name}_volume'] = df_assets.loc[mask, 'Volume']
-            mask = df_assets[f'{token.name}_volume'].isna()
-            idx = df_assets[f'{token.name}_volume'].first_valid_index()
-            df_assets.loc[idx:, f'{token.name}_volume'].fillna(0, inplace=True)
-            df_assets.drop('Volume', axis=1, inplace=True)
+        #Hacer por categoría?
+        if token.price:
+            price=token.price(token.url_price)
+            df_assets.loc[df_assets['upload_date'] == date, f'{token.name}_price'] = price
+        if token.vol:
+            vol=token.vol(token.url_vol)
+            df_assets.loc[df_assets['upload_date'] == date, f'{token.name}_volume'] = vol
     #TABLA MARKET CONTEXT
     df_btc=price_vol('bitcoin',difference_dates+5)
     df_btc.drop('Volume', axis=1, inplace=True)

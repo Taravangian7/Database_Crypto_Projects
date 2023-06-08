@@ -1,3 +1,5 @@
+from nft_scraping import price_tofu,volume_tofu
+
 class CryptoProject:
     def __init__(self,name,category,twitter,telegram,discord,tokens,tokens_NFT,dex_addresses,burning_addresses,minting_addresses,project_addresses):
         self.name=name
@@ -12,7 +14,7 @@ class CryptoProject:
         self.minting_addresses=minting_addresses
         self.project_addresses=project_addresses
 class Tokens:
-    def __init__(self,name,symbol,blockchain,contract_address,whale_amount,staking_addresses=[],category=[],price_hist=None,vol_hist=None):
+    def __init__(self,name,symbol,blockchain,contract_address,whale_amount,price=None,vol=None,url_price=None,url_vol=None,staking_addresses=[],category=[],price_hist=None,vol_hist=None):
         self.name=name
         self.symbol=symbol #Aparece al lado de total supply
         self.blockchain=blockchain
@@ -22,6 +24,10 @@ class Tokens:
         self.whale_amount=whale_amount
         self.price_hist=price_hist
         self.vol_hist=vol_hist
+        self.price=price
+        self.vol=vol
+        self.url_price=url_price
+        self.url_vol=url_vol
 
 my_projects=[
     {'Name':'NFT11_test',
@@ -36,9 +42,11 @@ my_projects=[
                           staking_addresses=['0x7bd96834dd035c487da56173032fb6bbb1c45925','0x7fb39a38d1a3e4e57d6791b954e1effc4039b3df',
                                          '0x410d60015512e794768982d4ee7f86b1d41544cc','0x59abfe4b88024a267f962326d5bb82e0c0bd09ff'],category=['Tier_1','Tier_2','Tier_3','Tier_4','Tier_5','Tier_6']),
                    Tokens(name='Legends V2',symbol='NLP',blockchain='BSC',contract_address='0x0a83be45f65962e50495e20d7163a5eee1fb467c',whale_amount=60,
-                          staking_addresses=['0x410d60015512e794768982d4ee7f86b1d41544cc','0x59abfe4b88024a267f962326d5bb82e0c0bd09ff']),
+                          staking_addresses=['0x410d60015512e794768982d4ee7f86b1d41544cc','0x59abfe4b88024a267f962326d5bb82e0c0bd09ff'],price=price_tofu,vol=volume_tofu,
+                          url_price='https://tofunft.com/collection/nft-11-legend-player/items?sort=price_asc',url_vol='https://tofunft.com/collection/nft-11-legend-player/activities?page='),
                    Tokens(name='Regulars V2',symbol='NRP',blockchain='BSC',contract_address='0xDCD4721E489F8FaC0d5D8F964Db826d0EdaFA547',whale_amount=60,
-                          staking_addresses=['0x410d60015512e794768982d4ee7f86b1d41544cc','0x59abfe4b88024a267f962326d5bb82e0c0bd09ff'])],
+                          staking_addresses=['0x410d60015512e794768982d4ee7f86b1d41544cc','0x59abfe4b88024a267f962326d5bb82e0c0bd09ff'],price=price_tofu,vol=volume_tofu,
+                          url_price='https://tofunft.com/collection/nft11-regular-player/items?sort=price_asc',url_vol='https://tofunft.com/collection/nft11-regular-player/activities?page=')],
      'Dex_addresses':['0x767f34BF351F67a0b9781a249C964508aD61f8F3','0xEf0A90fb728195F63C911f52ab4bde331089319f'],
      'Burning_addresses':['0x000000000000000000000000000000000000dead'],
      'Minting_addresses':['0x0000000000000000000000000000000000000000'],

@@ -59,4 +59,4 @@ def volume_tofu(url):
         add_volume,add_trades,page_trades,page=page_volume_tofu(url,page+1)
         volume+=add_volume
         trades+=add_trades
-    return [volume,trades]
+    return volume

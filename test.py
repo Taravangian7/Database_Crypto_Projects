@@ -6,6 +6,7 @@ from projects import projects
 from scraping import nfttoken_bscscan_data,token_bscscan_data
 import pandas as pd
 import numpy as np
+from nft_scraping import price_tofu,volume_tofu
 from datetime import datetime,timezone,timedelta
 date1=datetime.now(timezone.utc)
 date2=datetime.now(timezone.utc)-timedelta(minutes=200)
@@ -17,4 +18,4 @@ Session=sessionmaker(bind=engine)
 session=Session()
 query=session.query(Socials)
 df_socials = pd.read_sql(query.statement, session.connection())
-print(df_socials)
+print(price_tofu)
