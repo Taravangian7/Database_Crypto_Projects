@@ -16,6 +16,18 @@ database='NFT11_test'
 engine = create_engine(f'mssql+pyodbc://{usuario}:{contraseña}@{server}/{database}?driver={driver}')
 Session=sessionmaker(bind=engine)
 session=Session()
-query=session.query(Socials)
-df_socials = pd.read_sql(query.statement, session.connection())
-print(price_tofu)
+date="2023-06-08"
+query=session.query(Assets)
+df_assets = pd.read_sql(query.statement, session.connection())
+for project in projects:
+    for token in project.tokens_NFT:
+            #Hacer por categoría?
+            if token.price:
+                print('elton')
+                price=token.price(token.url_price)
+                print(price)
+                df_assets.loc[df_assets['upload_date'] == date, f'{token.name}_price'] = price
+            if token.vol:
+                vol=token.vol(token.url_vol)
+                df_assets.loc[df_assets['upload_date'] == date, f'{token.name}_volume'] = vol
+                print(vol)

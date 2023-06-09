@@ -21,7 +21,7 @@ def price_tofu(url):
     soup = BeautifulSoup(page, 'html.parser')  # parsing html to text
     lowestPrice = soup.find('p', {'class': 'chakra-text css-0'}).text.replace(' ', '').replace('BNB', '')
     return float(lowestPrice)
-'https://tofunft.com/collection/nft11players/items?sort=price_asc'
+#print(price_tofu('https://tofunft.com/collection/nft11players/items?sort=price_asc'))
 'https://tofunft.com/collection/nft11-regular-player/items?sort=price_asc'
 'https://tofunft.com/collection/nft-11-legend-player/items?sort=price_asc'
 'https://tofunft.com/collection/nft11-stadium/items?sort=price_asc'
@@ -60,3 +60,4 @@ def volume_tofu(url):
         volume+=add_volume
         trades+=add_trades
     return volume
+#print(volume_tofu('https://tofunft.com/collection/nft-11-legend-player/activities?page='))

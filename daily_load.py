@@ -329,38 +329,16 @@ for project in projects:
         print(date)
         date+=delta
         index+=1
-    #COMPLETO TABLA ASSETS. HAY REGISTROS QUE APARECEN NAN, ESTO ES PORQUE EL PRECIO NO VARIO NI HUBO VOLUMEN, ASÍ QUE LOS COMPLETO
     date-=delta
-    index-=1
-    for token in project.tokens:
-        df_price_vol=price_vol(token.blockchain,difference_dates+3,token.contract_address)
-        df_assets = pd.merge(df_assets,df_price_vol, on='upload_date', how='left')
-        mask = df_assets[f'{token.name}_price'] == 0
-        df_assets.loc[mask, f'{token.name}_price'] = df_assets.loc[mask, 'Price']
-        mask = df_assets[f'{token.name}_volume'] == 0
-        df_assets.loc[mask, f'{token.name}_volume'] = df_assets.loc[mask, 'Volume']
-        mask = df_assets[f'{token.name}_price'].isna()
-        idx = df_assets[f'{token.name}_price'].first_valid_index()
-        df_assets.loc[idx:, f'{token.name}_price'].fillna(method='ffill', inplace=True)
-        mask = df_assets[f'{token.name}_volume'].isna()
-        idx = df_assets[f'{token.name}_volume'].first_valid_index()
-        df_assets.loc[idx:, f'{token.name}_volume'].fillna(0, inplace=True)
-        df_assets.drop('Price', axis=1, inplace=True)
-        df_assets.drop('Volume', axis=1, inplace=True)
-    for token in project.tokens_NFT:
-        #Hacer por categoría?
-        if token.price:
-            price=token.price(token.url_price)
-            df_assets.loc[df_assets['upload_date'] == date, f'{token.name}_price'] = price
-        if token.vol:
-            vol=token.vol(token.url_vol)
-            df_assets.loc[df_assets['upload_date'] == date, f'{token.name}_volume'] = vol
+    index-=1    
     #TABLA MARKET CONTEXT
     df_btc=price_vol('bitcoin',difference_dates+5)
     df_btc.drop('Volume', axis=1, inplace=True)
     df_eth=price_vol('ethereum',difference_dates+5)
     df_eth.drop('Volume', axis=1, inplace=True)
     df_bnb=price_vol('binancecoin',difference_dates+5)
+    bnb_price=float(df_bnb.loc[df_bnb.index[-1],'Price'])
+    eth_price=float(df_eth.loc[df_bnb.index[-1],'Price'])
     df_bnb.drop('Volume', axis=1, inplace=True)
     df_market_context=pd.merge(df_market_context,df_btc, on='upload_date', how='left')
     df_market_context['btc_price'].fillna(df_market_context['Price'], inplace=True)
@@ -378,8 +356,35 @@ for project in projects:
     df_market_context.loc[mask, 'bnb_price'] = df_market_context.loc[mask, 'Price']
     df_market_context.drop('Price', axis=1, inplace=True)
     market_cap_niche= market_cap_category(project.category)
-    df_market_context.loc[df_market_context.index[-1], 'marketcap_niche'] = market_cap_niche
-    
+    df_market_context.loc[df_market_context.index[-1], 'marketcap_niche'] = market_cap_niche        
+    #COMPLETO TABLA ASSETS. HAY REGISTROS QUE APARECEN NAN, ESTO ES PORQUE EL PRECIO NO VARIO NI HUBO VOLUMEN, ASÍ QUE LOS COMPLETO
+    for token in project.tokens:
+        df_price_vol=price_vol(token.blockchain,difference_dates+3,token.contract_address)
+        df_assets = pd.merge(df_assets,df_price_vol, on='upload_date', how='left')
+        mask = df_assets[f'{token.name}_price'] == 0
+        df_assets.loc[mask, f'{token.name}_price'] = df_assets.loc[mask, 'Price']
+        mask = df_assets[f'{token.name}_volume'] == 0
+        df_assets.loc[mask, f'{token.name}_volume'] = df_assets.loc[mask, 'Volume']
+        mask = df_assets[f'{token.name}_price'].isna()
+        idx = df_assets[f'{token.name}_price'].first_valid_index()
+        df_assets.loc[idx:, f'{token.name}_price'].fillna(method='ffill', inplace=True)
+        mask = df_assets[f'{token.name}_volume'].isna()
+        idx = df_assets[f'{token.name}_volume'].first_valid_index()
+        df_assets.loc[idx:, f'{token.name}_volume'].fillna(0, inplace=True)
+        df_assets.drop('Price', axis=1, inplace=True)
+        df_assets.drop('Volume', axis=1, inplace=True)
+    for token in project.tokens_NFT:
+        #Hacer por categoría?
+        if token.blockchain=='BSC':
+            coin=bnb_price
+        elif token.blockchain=='Ethereum':
+            coin=eth_price
+        if token.price:
+            price=token.price(token.url_price)
+            df_assets.loc[df_assets['upload_date'] == date, f'{token.name}_price'] = (price*coin)
+        if token.vol:
+            vol=token.vol(token.url_vol)
+            df_assets.loc[df_assets['upload_date'] == date, f'{token.name}_volume'] = (vol*coin)
     #AGREGO SOLO LOS NUEVOS REGISTROS
     dates=get_dates_between(min_date, last_date)
     dates_mask_transfer = df_transfers['transfer_date'].isin(dates)
@@ -390,15 +395,10 @@ for project in projects:
     df_holders_hist=df_holders_hist[dates_mask_holders_hist]
     df_assets=df_assets[dates_mask_assets]
     df_market_context=df_market_context[dates_mask_market_context]
-    
-
     #CARGO LA DATA A SQL SERVER
     df_holders.to_sql(name='Holders', con=engine, if_exists='replace', index=False)
     df_transfers.to_sql(name='Transfers_Historical', con=engine, if_exists='append', index=False)
     session.commit()
-    #session.close()
-    #Session=sessionmaker(bind=engine)
-    #session=Session()
     df_holders_hist.to_sql(name='Holders_Historical', con=engine, if_exists='append', index=False)
     df_assets.to_sql(name='Assets', con=engine, if_exists='append', index=False)
     df_market_context.to_sql(name='Market_Context', con=engine, if_exists='append', index=False)
