@@ -1,13 +1,14 @@
 from sqlalchemy import create_engine,text
 from sqlalchemy.orm import sessionmaker
 from projects import projects
-from credentials import server,usuario,contraseña,driver
-from schema import Holders,Transfers_Historical,Holders_Historical,Assets,Market_Context,Socials
+from credentials import server,usuario,contraseña,driver, user_name,twitter_mail,twitter_password
+from schema import Holders,Transfers_Historical,Holders_Historical,Assets,Market_Context,Socials,Main_assets
 import pandas as pd
 from datetime import datetime, timezone,timedelta
-from scraping import price_vol,token_bscscan_data,nfttoken_bscscan_data,market_cap_category,scrape_telegram,scrape_discord,scrape_twitter
+from scraping import price_vol,token_bscscan_data,nfttoken_bscscan_data,market_cap_category,scrape_telegram,scrape_discord,scrape_twitter,coin_price
 import numpy as np
-import pytz
+import time
+from pbi_tables import table_pbi_4weeks_3months,table_pbi_assets_and_whales,table_pbi_socials,table_pbi_monthly
 
 def get_all_transfers(token,today,last_date,last_blocknumber,NFT=False):
     block_number=last_blocknumber
@@ -97,12 +98,29 @@ def holding_staking_role_update(token,df_holders,holding_staking,NFT=False):
 def get_dates_between(date1, date2):
     dates = []
     current_date = date1
-
     while current_date <= date2:
         dates.append(current_date)
         current_date += timedelta(days=1)
-
     return dates
+btc_price=0
+eth_price=0
+bnb_price=0
+while btc_price==0 or eth_price==0 or bnb_price==0:
+    if btc_price==0:
+        try:
+            btc_price=coin_price('bitcoin')
+        except:
+            time.sleep(1)
+    if eth_price==0:
+        try:
+            eth_price=coin_price('ethereum')
+        except:
+            time.sleep(1)
+    if bnb_price==0:
+        try:
+            bnb_price=coin_price('bnb')
+        except:
+            time.sleep(1)
 for project in projects:
     database=project.name
     engine = create_engine(f'mssql+pyodbc://{usuario}:{contraseña}@{server}/{database}?driver={driver}')
@@ -120,6 +138,9 @@ for project in projects:
     df_market_context = pd.read_sql(query.statement, session.connection())
     query=session.query(Socials)
     df_socials = pd.read_sql(query.statement, session.connection())
+    query=session.query(Main_assets)
+    df_main_assets = pd.read_sql(query.statement, session.connection())
+    last_marketcap=df_market_context.loc[df_market_context.index[-1], 'marketcap_niche']
     today = datetime.now(timezone.utc).date()
     last_datetime= df_holders_hist.iloc[-1]['last_transfer']
     last_block_number= df_holders_hist.iloc[-1]['last_block_number']
@@ -141,12 +162,10 @@ for project in projects:
         else:
             nfttoken_dataframe=dataframe
         del dataframe
-    query=session.query(Holders_Historical)
-    df_holders_hist = pd.read_sql(query.statement, session.connection())
-    query=session.query(Assets)
-    df_assets = pd.read_sql(query.statement, session.connection())
-    query=session.query(Market_Context)
-    df_market_context = pd.read_sql(query.statement, session.connection())
+    #query=session.query(Holders_Historical)
+    #df_holders_hist = pd.read_sql(query.statement, session.connection())
+    #query=session.query(Assets)
+    #df_assets = pd.read_sql(query.statement, session.connection())
     index=df_holders_hist.iloc[-1]['id']+1
 
     if not(token_dataframe.empty and nfttoken_dataframe.empty):
@@ -332,29 +351,35 @@ for project in projects:
     date-=delta
     index-=1    
     #TABLA MARKET CONTEXT
-    df_btc=price_vol('bitcoin',difference_dates+5)
+    df_btc=price_vol('bitcoin',difference_dates+3)
     df_btc.drop('Volume', axis=1, inplace=True)
-    df_eth=price_vol('ethereum',difference_dates+5)
+    df_eth=price_vol('ethereum',difference_dates+3)
     df_eth.drop('Volume', axis=1, inplace=True)
-    df_bnb=price_vol('binancecoin',difference_dates+5)
-    bnb_price=float(df_bnb.loc[df_bnb.index[-1],'Price'])
-    eth_price=float(df_eth.loc[df_bnb.index[-1],'Price'])
+    df_bnb=price_vol('binancecoin',difference_dates+3)
     df_bnb.drop('Volume', axis=1, inplace=True)
     df_market_context=pd.merge(df_market_context,df_btc, on='upload_date', how='left')
     df_market_context['btc_price'].fillna(df_market_context['Price'], inplace=True)
     mask = df_market_context['btc_price'] == 0
     df_market_context.loc[mask, 'btc_price'] = df_market_context.loc[mask, 'Price']
+    df_market_context.loc[df_market_context.index[-1], 'btc_price'] = btc_price
     df_market_context.drop('Price', axis=1, inplace=True)
     df_market_context=pd.merge(df_market_context,df_eth, on='upload_date', how='left')
     df_market_context['eth_price'].fillna(df_market_context['Price'], inplace=True)
     mask = df_market_context['eth_price'] == 0
     df_market_context.loc[mask, 'eth_price'] = df_market_context.loc[mask, 'Price']
+    df_market_context.loc[df_market_context.index[-1], 'eth_price'] = eth_price
     df_market_context.drop('Price', axis=1, inplace=True)
     df_market_context=pd.merge(df_market_context,df_bnb, on='upload_date', how='left')
     df_market_context['bnb_price'].fillna(df_market_context['Price'], inplace=True)
     mask = df_market_context['bnb_price'] == 0
     df_market_context.loc[mask, 'bnb_price'] = df_market_context.loc[mask, 'Price']
+    df_market_context.loc[df_market_context.index[-1], 'bnb_price'] = bnb_price
     df_market_context.drop('Price', axis=1, inplace=True)
+    market_difference_dates=difference_dates
+    while market_difference_dates>=1:
+        new_date=date-timedelta(days=market_difference_dates)
+        df_market_context.loc[df_market_context['upload_date'] == new_date, 'marketcap_niche'] = last_marketcap
+        market_difference_dates-=1
     market_cap_niche= market_cap_category(project.category)
     df_market_context.loc[df_market_context.index[-1], 'marketcap_niche'] = market_cap_niche        
     #COMPLETO TABLA ASSETS. HAY REGISTROS QUE APARECEN NAN, ESTO ES PORQUE EL PRECIO NO VARIO NI HUBO VOLUMEN, ASÍ QUE LOS COMPLETO
@@ -365,14 +390,19 @@ for project in projects:
         df_assets.loc[mask, f'{token.name}_price'] = df_assets.loc[mask, 'Price']
         mask = df_assets[f'{token.name}_volume'] == 0
         df_assets.loc[mask, f'{token.name}_volume'] = df_assets.loc[mask, 'Volume']
-        mask = df_assets[f'{token.name}_price'].isna()
         idx = df_assets[f'{token.name}_price'].first_valid_index()
         df_assets.loc[idx:, f'{token.name}_price'].fillna(method='ffill', inplace=True)
-        mask = df_assets[f'{token.name}_volume'].isna()
         idx = df_assets[f'{token.name}_volume'].first_valid_index()
         df_assets.loc[idx:, f'{token.name}_volume'].fillna(0, inplace=True)
         df_assets.drop('Price', axis=1, inplace=True)
         df_assets.drop('Volume', axis=1, inplace=True)
+        token_price=0
+        while token_price==0:
+            try:
+                token_price=coin_price(token.name)
+            except:
+                time.sleep(1)
+        df_assets.loc[df_assets.index[-1], f'{token.name}_price'] = token_price
     for token in project.tokens_NFT:
         #Hacer por categoría?
         if token.blockchain=='BSC':
@@ -385,25 +415,27 @@ for project in projects:
         if token.vol:
             vol=token.vol(token.url_vol)
             df_assets.loc[df_assets['upload_date'] == date, f'{token.name}_volume'] = (vol*coin)
-    #AGREGO SOLO LOS NUEVOS REGISTROS
+    #COPIO DATAFRAME PARA TABLA PBI
+    df_transfers_pbi=df_transfers
+    df_holders_hist_pbi=df_holders_hist
+    df_assets_pbi=df_assets
+    #AGREGO SOLO LOS NUEVOS REGISTROS. 
     dates=get_dates_between(min_date, last_date)
     dates_mask_transfer = df_transfers['transfer_date'].isin(dates)
     dates_mask_holders_hist = df_holders_hist['upload_date'].isin(dates)
     dates_mask_assets = df_assets['upload_date'].isin(dates)
-    dates_mask_market_context = df_market_context['upload_date'].isin(dates)
     df_transfers=df_transfers[dates_mask_transfer]
     df_holders_hist=df_holders_hist[dates_mask_holders_hist]
     df_assets=df_assets[dates_mask_assets]
-    df_market_context=df_market_context[dates_mask_market_context]
     #CARGO LA DATA A SQL SERVER
     df_holders.to_sql(name='Holders', con=engine, if_exists='replace', index=False)
     df_transfers.to_sql(name='Transfers_Historical', con=engine, if_exists='append', index=False)
     session.commit()
     df_holders_hist.to_sql(name='Holders_Historical', con=engine, if_exists='append', index=False)
     df_assets.to_sql(name='Assets', con=engine, if_exists='append', index=False)
-    df_market_context.to_sql(name='Market_Context', con=engine, if_exists='append', index=False)
+    df_market_context.to_sql(name='Market_Context', con=engine, if_exists='replace', index=False)
     #AGREGO REGISTO DEL DÍA A SOCIALS
-    twitter=scrape_twitter(project.twitter)
+    twitter=scrape_twitter(project.twitter,username=twitter_mail,password=twitter_password,user_name=user_name)
     discord=scrape_discord(project.discord)
     columns=[]
     values=[]
@@ -419,9 +451,40 @@ for project in projects:
         session.add(first_row)
         session.commit()
     else:
+        last_twitter=df_socials.loc[df_socials.index[-1], 'twitter_members']
+        last_discord=df_socials.loc[df_socials.index[-1], 'discord_members']
+        last_columns=[]
+        last_values=[]
+        for group in project.telegram:
+            last_telegram_group= f'telegram_{list(group.keys())[0]}_members'
+            last_value=df_socials.loc[df_socials.index[-1], last_telegram_group]
+            last_columns.append(last_telegram_group)
+            last_values.append(last_value)
+        while difference_dates>=1:
+            new_date=date-timedelta(days=difference_dates)
+            df_socials.loc[len(df_socials)] = [index-difference_dates] + [new_date] + [last_twitter] + [last_discord] + [0] * (len(df_socials.columns) - 4)
+            for last_column, last_value in zip(last_columns, last_values):
+                df_socials.loc[df_socials['upload_date'] == new_date, last_column] = last_value
+            difference_dates-=1
         df_socials.loc[len(df_socials)] = [index] + [date] + [twitter] + [discord] + [0] * (len(df_socials.columns) - 4)
         for column, value in zip(columns, values):
             df_socials.loc[df_socials['upload_date'] == date, column] = value
-        dates_mask_socials = df_socials['upload_date'].isin([date])
+        df_socials_pbi=df_socials
+        dates_mask_socials = df_socials['upload_date'].isin(dates)
         df_socials=df_socials[dates_mask_socials]
         df_socials.to_sql(name='Socials', con=engine, if_exists='append', index=False)
+    #CARGO TABLAS PBI
+    dataframe=table_pbi_4weeks_3months(project=project,social_dataframe=df_socials_pbi,market_dataframe=df_market_context,asset_dataframe=df_assets_pbi,date=date,weekly=False)
+    dataframe.to_sql(name='PBI_3months_4weeks', con=engine, if_exists='replace', index=False)
+
+    dataframe=table_pbi_assets_and_whales(project=project,asset_list=df_main_assets,holders_dataframe=df_holders_hist_pbi,market_dataframe=df_market_context,asset_dataframe=df_assets_pbi,transfer_dataframe=df_transfers_pbi,date=date,weekly=True)[0]
+    dataframe.to_sql(name='PBI_Assets', con=engine, if_exists='replace', index=False)
+
+    dataframe=table_pbi_assets_and_whales(project=project,asset_list=df_main_assets,holders_dataframe=df_holders_hist_pbi,market_dataframe=df_market_context,asset_dataframe=df_assets_pbi,transfer_dataframe=df_transfers_pbi,date=date,weekly=True)[1]
+    dataframe.to_sql(name='PBI_Whales', con=engine, if_exists='replace', index=False)
+
+    dataframe=table_pbi_socials(project=project,social_dataframe=df_socials,date=date,weekly=True)
+    dataframe.to_sql(name='PBI_Socials', con=engine, if_exists='replace', index=False)
+
+    dataframe=table_pbi_monthly(project=project,market_dataframe=df_market_context,transfer_dataframe=df_transfers_pbi,asset_dataframe=df_assets_pbi,date=date)
+    dataframe.to_sql(name='PBI_Monthly', con=engine, if_exists='replace', index=False)

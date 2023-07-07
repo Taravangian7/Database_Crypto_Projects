@@ -265,6 +265,213 @@ for project in projects:
         id=Column(Integer, primary_key=True)
         asset=Column(String)
     
+    #TABLA PBI 4 semanas
+    class PBI_3months_4weeks(Base):
+        __tablename__ = 'PBI_3months_4weeks'
+        id = Column(Integer, primary_key=True, autoincrement=False)
+        upload_date=Column(Date)
+        twitter_followers=Column(Integer)
+        discord_members=Column(Integer)
+        for group in project.telegram:
+            telegram_group= f'telegram_{list(group.keys())[0]}_members'
+            locals()[telegram_group] = Column(Integer)
+        telegram_total_members=Column(Integer)
+        btc_price=Column(Numeric(precision=18, scale=6))
+        eth_price=Column(Numeric(precision=18, scale=6))
+        bnb_price=Column(Numeric(precision=18, scale=6))
+        marketcap_niche=Column(Numeric(precision=18, scale=6))
+        for token in tokens:
+            assets_price= f'{token.name}_price'
+            assets_volume = f'{token.name}_volume'
+            assets_holders = f'{token.name}_holders'
+            locals()[assets_price] = Column(Numeric(precision=18, scale=6))
+            locals()[assets_volume] = Column(Numeric(precision=18, scale=6))
+            locals()[assets_holders] = Column(Integer)
+        for token in tokens_nft:
+            if len(token.category)>0:
+                for category in token.category:
+                    assets_price= f'{token.name}_{category}_price'
+                    assets_volume = f'{token.name}_{category}_volume'
+                    locals()[assets_price] = Column(Numeric(precision=18, scale=6))
+                    locals()[assets_volume] = Column(Numeric(precision=18, scale=6))
+            else:
+                assets_price= f'{token.name}_price'
+                assets_volume = f'{token.name}_volume'
+                locals()[assets_price] = Column(Numeric(precision=18, scale=6))
+                locals()[assets_volume] = Column(Numeric(precision=18, scale=6))
+            assets_holders = f'{token.name}_holders'
+            locals()[assets_holders] = Column(Integer)
+        def __init__(self,id,upload_date,twitter_followers,discord_members,telegram_total_members,btc_price,eth_price,bnb_price,marketcap_niche, **kwargs):
+            self.id=id
+            self.upload_date = upload_date
+            self.twitter_followers=twitter_followers
+            self.discord_members=discord_members
+            for group in project.telegram:
+                telegram_group= f'telegram_{list(group.keys())[0]}_members'
+                if telegram_group in kwargs:
+                    setattr(self, telegram_group, kwargs[telegram_group])
+            self.telegram_total_members=telegram_total_members        
+            self.btc_price=btc_price
+            self.eth_price=eth_price
+            self.bnb_price=bnb_price
+            self.marketcap_niche=marketcap_niche
+            for token in tokens:
+                assets_price= f'{token.name}_price'
+                assets_volume = f'{token.name}_volume'
+                assets_holders = f'{token.name}_holders'
+                setattr(self, assets_price, kwargs.get(assets_price,0))
+                setattr(self, assets_volume, kwargs.get(assets_volume,0))
+                setattr(self, assets_holders, kwargs.get(assets_holders,0))
+            for token in tokens_nft:
+                if len(token.category)>0:
+                    for category in token.category:
+                        assets_price= f'{token.name}_{category}_price'
+                        assets_volume = f'{token.name}_{category}_volume'
+                        setattr(self, assets_price, kwargs.get(assets_price,0))
+                        setattr(self, assets_volume, kwargs.get(assets_volume,0))
+                else:
+                    assets_price= f'{token.name}_price'
+                    assets_volume = f'{token.name}_volume'
+                    setattr(self, assets_price, kwargs.get(assets_price,0))
+                    setattr(self, assets_volume, kwargs.get(assets_volume,0))
+                assets_holders = f'{token.name}_holders'
+                setattr(self, assets_holders, kwargs.get(assets_holders,0))
+    #TABLA PBI Assets
+    class PBI_Assets(Base):
+        __tablename__ = 'PBI_Assets'
+        assets = Column(String(length=255), primary_key=True)
+        price=Column(Numeric(precision=18, scale=6))
+        price_change=Column(Numeric(precision=18, scale=6))
+        holders=Column(Integer)
+        holders_change=Column(Numeric(precision=18, scale=6))
+        volume=Column(Numeric(precision=18, scale=6))
+        volume_change=Column(Numeric(precision=18, scale=6))
+        whales=Column(Integer)
+        whales_change=Column(Numeric(precision=18, scale=6))
+        whales_holding_variation_por=Column(Numeric(precision=18, scale=6))
+        whales_holding_por_of_total=Column(Numeric(precision=18, scale=6))
+        bought_total=Column(Numeric(precision=18, scale=6))
+        bought_whales=Column(Numeric(precision=18, scale=6))
+        sold_total=Column(Numeric(precision=18, scale=6))
+        sold_whales=Column(Numeric(precision=18, scale=6))
+        def __init__(self,assets,price,price_change,holders,holders_change,volume,volume_change,whales,whales_change,whales_holding_variation_por,whales_holding_por_of_total,bought_total,bought_whales,sold_total,sold_whales):
+            self.assets = assets
+            self.price=price
+            self.price_change=price_change
+            self.holders=holders
+            self.holders_change=holders_change
+            self.volume=volume
+            self.volume_change=volume_change
+            self.whales=whales
+            self.whales_change=whales_change
+            self.whales_holding_variation_por=whales_holding_variation_por
+            self.whales_holding_por_of_total=whales_holding_por_of_total
+            self.bought_total=bought_total
+            self.bought_whales=bought_whales
+            self.sold_total=sold_total
+            self.sold_whales=sold_whales
+    #TABLA PBI Whales
+    class PBI_Whales(Base):
+        __tablename__ = 'PBI_Whales'
+        operation = Column(String(length=255), primary_key=True)
+        for token in tokens:
+            assets_whale= f'{token.name}_whale'
+            assets_total = f'{token.name}_total'
+            locals()[assets_whale] = Column(Numeric(precision=18, scale=6))
+            locals()[assets_total] = Column(Numeric(precision=18, scale=6))
+        for token in tokens_nft:
+            assets_whale= f'{token.name}_whale'
+            assets_total = f'{token.name}_total'
+            locals()[assets_whale] = Column(Integer)
+            locals()[assets_total] = Column(Integer)
+        def __init__(self,operation,**kwargs):
+            self.operation=operation
+            for token in tokens+tokens_nft:
+                assets_whale= f'{token.name}_whale'
+                assets_total = f'{token.name}_total'
+                setattr(self, assets_whale, kwargs.get(assets_whale,0))
+                setattr(self, assets_total, kwargs.get(assets_total,0))
+    #TABLA PBI Socials
+    class PBI_Socials(Base):
+        __tablename__ = 'PBI_Socials'
+        id=Column(Integer,primary_key=True,autoincrement=False)
+        social_network = Column(String(length=255))
+        this_cycle=Column(Integer)
+        last_cycle=Column(Integer)
+        change=Column(Numeric(precision=18, scale=6))
+        def __init__(self,id,social_network,this_cycle,last_cycle,change):
+            self.id = id
+            self.social_network=social_network
+            self.this_cycle=this_cycle
+            self.last_cycle=last_cycle
+            self.change=change
+    #TABLA PBI MONTHLY
+    class PBI_Monthly(Base):
+        __tablename__ = 'PBI_Monthly'
+        id=Column(Integer, primary_key=True, autoincrement=False)
+        año=Column(Integer)
+        mes=Column(String(length=255))
+        upload_date=Column(Date)
+        for token in tokens:
+            assets_price= f'Last_{token.name}_price'
+            assets_volume = f'{token.name}_volume'
+            assets_holders = f'{token.name}_holders'
+            assets_staking = f'{token.name}_staking'
+            locals()[assets_price] = Column(Numeric(precision=18, scale=6))
+            locals()[assets_volume] = Column(Numeric(precision=18, scale=6))
+            locals()[assets_holders] = Column(Integer)
+            locals()[assets_staking] = Column(Numeric(precision=18, scale=6))
+        for token in tokens_nft:
+            if len(token.category)>0:
+                for category in token.category:
+                    assets_price= f'Last_{token.name}_{category}_price'
+                    assets_volume = f'{token.name}_{category}_volume'
+                    locals()[assets_price] = Column(Numeric(precision=18, scale=6))
+                    locals()[assets_volume] = Column(Numeric(precision=18, scale=6))
+            else:
+                assets_price= f'Last_{token.name}_price'
+                assets_volume = f'{token.name}_volume'
+                locals()[assets_price] = Column(Numeric(precision=18, scale=6))
+                locals()[assets_volume] = Column(Numeric(precision=18, scale=6))
+            assets_holders = f'{token.name}_holders'
+            locals()[assets_holders] = Column(Integer)
+        btc_price=Column(Numeric(precision=18, scale=6))
+        eth_price=Column(Numeric(precision=18, scale=6))
+        bnb_price=Column(Numeric(precision=18, scale=6))
+        niche_marketcap=Column(Numeric(precision=18, scale=6))
+        def __init__(self,id,año,mes,upload_date,btc_price,eth_price,bnb_price,niche_marketcap,**kwargs):
+            self.id=id
+            self.año=año
+            self.mes=mes
+            self.upload_date=upload_date
+            self.btc_price=btc_price
+            self.eth_price=eth_price
+            self.bnb_price=bnb_price
+            self.niche_marketcap=niche_marketcap
+            for token in tokens:
+                assets_price= f'Last_{token.name}_price'
+                assets_volume = f'{token.name}_volume'
+                assets_holders = f'{token.name}_holders'
+                assets_staking = f'{token.name}_staking'
+                setattr(self, assets_price, kwargs.get(assets_price,0))
+                setattr(self, assets_volume, kwargs.get(assets_volume,0))
+                setattr(self, assets_holders, kwargs.get(assets_holders,0))
+                setattr(self, assets_staking, kwargs.get(assets_staking,0))
+            for token in tokens_nft:
+                if len(token.category)>0:
+                    for category in token.category:
+                        assets_price= f'Last_{token.name}_{category}_price'
+                        assets_volume = f'{token.name}_{category}_volume'
+                        setattr(self, assets_price, kwargs.get(assets_price,0))
+                        setattr(self, assets_volume, kwargs.get(assets_volume,0))
+                else:
+                    assets_price= f'Last_{token.name}_price'
+                    assets_volume = f'{token.name}_volume'
+                    setattr(self, assets_price, kwargs.get(assets_price,0))
+                    setattr(self, assets_volume, kwargs.get(assets_volume,0))
+                assets_holders = f'{token.name}_holders'
+                setattr(self, assets_holders, kwargs.get(assets_holders,0))
+
     #generate database schema
     if create_tables:
         Base.metadata.create_all(engine)
@@ -294,6 +501,10 @@ for project in projects:
             dex_address=Holders(address=address,address_owner='Project')
             session.add(dex_address)
         for token in project.tokens+project.tokens_NFT:
+            if token.category:
+                for category in token.category:
+                    asset=Main_assets(asset=f'{token.name}_{category}')
+                    session.add(asset)
             asset=Main_assets(asset=token.name)
             session.add(asset)
         session.commit()

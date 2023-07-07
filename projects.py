@@ -15,7 +15,7 @@ class CryptoProject:
         self.project_addresses=project_addresses
 class Tokens:
     def __init__(self,name,symbol,blockchain,contract_address,whale_amount,price=None,vol=None,url_price=None,url_vol=None,staking_addresses=[],category=[],price_hist=None,vol_hist=None):
-        self.name=name
+        self.name=name #DEBE SER EL NOMBRE CON EL QUE APARECE EN CMC (EN LA URL)
         self.symbol=symbol #Aparece al lado de total supply
         self.blockchain=blockchain
         self.contract_address=contract_address

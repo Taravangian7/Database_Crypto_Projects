@@ -305,10 +305,10 @@ for project in projects:
             df_assets = pd.merge(df_assets,df_price_vol, on='upload_date', how='left')
             df_assets.rename(columns={'Price': f'{token.name}_price'}, inplace=True)
             df_assets.rename(columns={'Volume': f'{token.name}_volume'}, inplace=True)
-            mask = df_assets[f'{token.name}_price'].isna()
+            #mask = df_assets[f'{token.name}_price'].isna()
             idx = df_assets[f'{token.name}_price'].first_valid_index()
             df_assets.loc[idx:, f'{token.name}_price'].fillna(method='ffill', inplace=True)
-            mask = df_assets[f'{token.name}_volume'].isna()
+            #mask = df_assets[f'{token.name}_volume'].isna()
             idx = df_assets[f'{token.name}_volume'].first_valid_index()
             df_assets.loc[idx:, f'{token.name}_volume'].fillna(0, inplace=True)
         for token in project.tokens_NFT:
@@ -317,7 +317,7 @@ for project in projects:
                 df_price=token.price_hist(token.blockchain,difference_dates,token.contract_address)
                 df_assets = pd.merge(df_assets,df_price, on='upload_date', how='left')
                 df_assets.rename(columns={'Price': f'{token.name}_Price'}, inplace=True)
-                mask = df_assets[f'{token.name}_price'].isna()
+                #mask = df_assets[f'{token.name}_price'].isna()
                 idx = df_assets[f'{token.name}_price'].first_valid_index()
                 df_assets.loc[idx:, f'{token.name}_price'].fillna(method='ffill', inplace=True)
             if token.vol_hist:
@@ -325,7 +325,7 @@ for project in projects:
                 df_volume=token.vol_hist(token.blockchain,difference_dates,token.contract_address)
                 df_assets = pd.merge(df_assets,df_volume, on='upload_date', how='left')
                 df_assets.rename(columns={'Volume': f'{token.name}_Volume'}, inplace=True)
-                mask = df_assets[f'{token.name}_volume'].isna()
+                #mask = df_assets[f'{token.name}_volume'].isna()
                 idx = df_assets[f'{token.name}_volume'].first_valid_index()
                 df_assets.loc[idx:, f'{token.name}_volume'].fillna(0, inplace=True)
         #TABLA MARKET CONTEXT
@@ -353,29 +353,6 @@ for project in projects:
         df_holders_hist.to_sql(name='Holders_Historical', con=engine, if_exists='append', index=False)
         df_assets.to_sql(name='Assets', con=engine, if_exists='append', index=False)
         df_market_context.to_sql(name='Market_Context', con=engine, if_exists='append', index=False)
-        
-
-        #print(df_holders.info())
-        #print(df_transfers.info())
-        #print(df_holders_hist.info())
-        #print(df_holders_hist)
-        #print(df_assets)
-        #print(df_assets.info())
-        #print(df_market_context)
-        #print(df_market_context.info())
-        
-        #1-LOOP PARA CADA DÍA
-        #2-VERIFICO QUE DIRECCIONES SON BALLENAS Y GUARDO CUANTO COMPRARON,VENDIERON Y PUSIERON EN STAKING (Esto va a tabla TRANSFER_HISTORICAL)
-        #3-ACTUALIZO LOS HOLDINGS DE TODAS LAS DIRECCIONES (Esto va a tabla HOLDERS)
-            #Para Holding resto amount a direccion "from" y sumo a dirección "to"
-            #Para Staking sumo amount a dirección "from" y resto a dirección "to", solo en transacciones donde haya dirección de staking
-            #Atención en filtrar por fecha y activo
-            #Seteo como holding nulo a aquellas direcciones que tengan tokens remanentes (menor a 0.0001)
-            #Doy categoría WHALE a las direcciones con más de la cantidad seteada.
-        #4-USANDO LOS DATAFRAME DE TRANSFERENCIAS, CALCULO LOS CAMPOS NECESARIOS PARA TRANSFER_HISTORICAL(SE SUMA A #2)
-            #Acá no tengo que tener en cuenta las direcciones de ballenas que haya calculado en el #2
-        #5-COMPLETO HOLDERS HISTORICAL Y ALGUNAS COLUMNAS DE ASSETS
-        #6-TERMINA LOOP PARA CADA DÍA
-        #7-SE COMPLETA MARKET CONTEXT y EL RESTANTE DE ASSETS(PRECIO Y VOLUMEN)
+        #ACÁ ME QUEDA COMPLETAR LAS TABLAS PBI. PARA ESO CREO DATAFRAMES CON LOS TIPOS CORRECTOS DE DATOS Y LUEGO LOS ENVIO A BASE DE DATOS
         del token_dataframe
         del nfttoken_dataframe

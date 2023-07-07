@@ -12,6 +12,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from pycoingecko import CoinGeckoAPI
 import pandas as pd
+import json
+
 cg = CoinGeckoAPI()
 
 def scrape_telegram(url):
@@ -35,16 +37,35 @@ def scrape_discord(url):
     discordGroupMembers = int(re.findall(' [0-9]+ ', scrapedGroupMembers)[0])
     return discordGroupMembers
 
-def scrape_twitter(url):
+def scrape_twitter(url,username,password,user_name):
     patron=r'[^/]+$'
     name=re.findall(patron,url)[0]
     #El scraping se hace usando Selenium, es decir que se abre una ventana para acceder a la web como si fuera un usuario y tomar los datos
     #Para que la ventana solo se abra dentro de python (y no la veamos), debemos agregar estas opciones
     options=Options() #Crea objeto options para configurar navegador
-    options.add_argument('--headless') #Se ejecuta sin interfaz gráfica (la ventana se abre en segundo plano)
+    #options.add_argument('--headless') #Se ejecuta sin interfaz gráfica (la ventana se abre en segundo plano)
     options.add_argument('--disable-gpu') #desactivan gpu del sistema, mejora rendimiento
     driver = webdriver.Firefox(options=options) #Creas la instancia, dejas este objeto listo para acceder a una web.
-    # Entras a la web, en este caso twitter
+
+    # Iniciar sesión en Twitter
+    driver.get('https://twitter.com/login')
+    time.sleep(3)
+    driver.find_element(By.CSS_SELECTOR, 'div.css-1dbjc4n.r-1wbh5a2.r-kwpbio.r-rsyp9y.r-1pjcn9w.r-htvplk.r-1udh08x input').click()
+    driver.find_element(By.CSS_SELECTOR, 'div.css-1dbjc4n.r-1wbh5a2.r-kwpbio.r-rsyp9y.r-1pjcn9w.r-htvplk.r-1udh08x input').send_keys(username)
+    driver.find_element(By.CSS_SELECTOR, '#layers > div > div > div > div > div > div > div.css-1dbjc4n.r-1awozwy.r-18u37iz.r-1pi2tsx.r-1777fci.r-1xcajam.r-ipm5af.r-g6jmlv > div.css-1dbjc4n.r-1867qdf.r-1wbh5a2.r-kwpbio.r-rsyp9y.r-1pjcn9w.r-1279nm1.r-htvplk.r-1udh08x > div > div > div.css-1dbjc4n.r-kemksi.r-6koalj.r-16y2uox.r-1wbh5a2 > div.css-1dbjc4n.r-16y2uox.r-1wbh5a2.r-1jgb5lz.r-1ye8kvj.r-13qz1uu > div > div > div > div:nth-child(6) > div > span > span').click()
+    time.sleep(1)
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#layers > div > div > div > div > div > div > div.css-1dbjc4n.r-1awozwy.r-18u37iz.r-1pi2tsx.r-1777fci.r-1xcajam.r-ipm5af.r-g6jmlv > div.css-1dbjc4n.r-1867qdf.r-1wbh5a2.r-kwpbio.r-rsyp9y.r-1pjcn9w.r-1279nm1.r-htvplk.r-1udh08x > div > div > div.css-1dbjc4n.r-kemksi.r-6koalj.r-16y2uox.r-1wbh5a2 > div.css-1dbjc4n.r-16y2uox.r-1wbh5a2.r-1jgb5lz.r-1ye8kvj.r-13qz1uu > div.css-1dbjc4n.r-16y2uox.r-1wbh5a2.r-1dqxon3 > div > div.css-1dbjc4n.r-mk0yit.r-1f1sjgu > label > div > div.css-1dbjc4n.r-18u37iz.r-16y2uox.r-1wbh5a2.r-1wzrnnt.r-1udh08x.r-xd6kpl.r-1pn2ns4.r-ttdzmv > div > input').click
+        driver.find_element(By.CSS_SELECTOR, '#layers > div > div > div > div > div > div > div.css-1dbjc4n.r-1awozwy.r-18u37iz.r-1pi2tsx.r-1777fci.r-1xcajam.r-ipm5af.r-g6jmlv > div.css-1dbjc4n.r-1867qdf.r-1wbh5a2.r-kwpbio.r-rsyp9y.r-1pjcn9w.r-1279nm1.r-htvplk.r-1udh08x > div > div > div.css-1dbjc4n.r-kemksi.r-6koalj.r-16y2uox.r-1wbh5a2 > div.css-1dbjc4n.r-16y2uox.r-1wbh5a2.r-1jgb5lz.r-1ye8kvj.r-13qz1uu > div.css-1dbjc4n.r-16y2uox.r-1wbh5a2.r-1dqxon3 > div > div.css-1dbjc4n.r-mk0yit.r-1f1sjgu > label > div > div.css-1dbjc4n.r-18u37iz.r-16y2uox.r-1wbh5a2.r-1wzrnnt.r-1udh08x.r-xd6kpl.r-1pn2ns4.r-ttdzmv > div > input').send_keys(user_name)
+        driver.find_element(By.CSS_SELECTOR, '#layers > div > div > div > div > div > div > div.css-1dbjc4n.r-1awozwy.r-18u37iz.r-1pi2tsx.r-1777fci.r-1xcajam.r-ipm5af.r-g6jmlv > div.css-1dbjc4n.r-1867qdf.r-1wbh5a2.r-kwpbio.r-rsyp9y.r-1pjcn9w.r-1279nm1.r-htvplk.r-1udh08x > div > div > div.css-1dbjc4n.r-kemksi.r-6koalj.r-16y2uox.r-1wbh5a2 > div.css-1dbjc4n.r-16y2uox.r-1wbh5a2.r-1jgb5lz.r-1ye8kvj.r-13qz1uu > div.css-1dbjc4n.r-1isdzm1 > div > div > div > div').click()
+    except:
+        pass
+    time.sleep(1)
+    driver.find_element(By.CSS_SELECTOR, '.r-homxoj').send_keys(password)
+    driver.find_element(By.CSS_SELECTOR, 'span.css-1hf3ou5:nth-child(1) > span:nth-child(1)').click()
+    time.sleep(10)
+
+    # Después de cargar la página deseada
     driver.get(url)
     time.sleep(5)
     #Si tiene menos de 10000 seguidores el HTML tiene una forma, y si tiene más tiene otro. Por eso contemplo ambos casos
@@ -111,7 +132,18 @@ def price_vol(blockchain,days,address=None):
     # Imprimir los dataframes resultantes
     return df_data
 #print(price_vol('bsc',2000,'0x73f67ae7f934ff15beabf55a28c2da1eeb9b56ec'))
-#print(price_vol('binancecoin',2000))
+#print(price_vol('bitcoin',2000))
+
+def coin_price(coin):
+    # Hacer la petición GET al sitio web
+    response = requests.get(f'https://coinmarketcap.com/currencies/{coin}/', headers={'User-Agent': 'Mozilla/5.0'})
+    # Crear objeto BeautifulSoup
+    soup = BeautifulSoup(response.content, 'html.parser')
+    # Encontrar el div con la clase 'tgme_page_extra' y obtener su contenido
+    span = soup.find('div', {'class': 'sc-aef7b723-0 dDQUel priceTitle'})
+    price=span.find('div', {'class': 'priceValue'}).text.replace('$','').replace(',','')
+    return float(price)
+
 
 def btc_dominance():
     url = "https://api.coingecko.com/api/v3/global"
@@ -133,42 +165,54 @@ def market_cap_category(category_id):
     return market_cap
 #print(market_cap_category('gaming'))
 def token_bscscan_data(contract_address,logs,sort='desc',startblock=0):
-    url = url = f'https://api.bscscan.com/api?module=account&action=tokentx&contractaddress={contract_address}&startblock={startblock}&page=1&offset={logs}&sort={sort}&apikey={bsc_apikey}&tag=latest'
-    response=requests.get(url)
-    transactions = []
-    for i in response.json()['result']:
-        timestamp = int(i['timeStamp'])
-        temp = {
-            'dateTime': datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S'),
-            'from': i['from'],
-            'to': i['to'],
-            'value': float(i['value'])/1000000000000000000,
-            'tokenSymbol': i['tokenSymbol'],
-            'blocknumber':i['blockNumber'],
-            'hash':i['hash'],
-            'method': i['input'][:10]}
-        transactions.append(temp)
-    df_bscscan=pd.DataFrame(transactions)    
+    incomplete=True
+    while incomplete:
+        try:
+            url = url = f'https://api.bscscan.com/api?module=account&action=tokentx&contractaddress={contract_address}&startblock={startblock}&page=1&offset={logs}&sort={sort}&apikey={bsc_apikey}&tag=latest'
+            response=requests.get(url)
+            transactions = []
+            for i in response.json()['result']:
+                timestamp = int(i['timeStamp'])
+                temp = {
+                    'dateTime': datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S'),
+                    'from': i['from'],
+                    'to': i['to'],
+                    'value': float(i['value'])/1000000000000000000,
+                    'tokenSymbol': i['tokenSymbol'],
+                    'blocknumber':i['blockNumber'],
+                    'hash':i['hash'],
+                    'method': i['input'][:10]}
+                transactions.append(temp)
+            df_bscscan=pd.DataFrame(transactions)
+            incomplete=False
+        except:
+            time.sleep(2)
     return df_bscscan 
 #print(token_bscscan_data('0x73F67AE7f934FF15beaBf55A28C2Da1eEb9B56Ec',10000,'asc',2863350700)) 
 
 #Para NFTs
 def nfttoken_bscscan_data(contract_address,logs,sort='desc',startblock=0):
-    url = url = f'https://api.bscscan.com/api?module=account&action=tokennfttx&contractaddress={contract_address}&startblock={startblock}&page=1&offset={logs}&sort={sort}&apikey={bsc_apikey}&tag=latest'
-    response=requests.get(url)
-    transactions = []
-    for i in response.json()['result']:
-        ts = int(i['timeStamp'])
-        temp = {
-            'dateTime': datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S'),
-            'from': i['from'],
-            'to': i['to'],
-            'tokenID': int(i['tokenID']),
-            'tokenSymbol': i['tokenSymbol'],
-            'blocknumber':i['blockNumber'],
-            'hash':i['hash'],
-            'method': i['input'][:10]}
-        transactions.append(temp)
-    df_bscscan=pd.DataFrame(transactions)    
+    incomplete=True
+    while incomplete:
+        try:
+            url = url = f'https://api.bscscan.com/api?module=account&action=tokennfttx&contractaddress={contract_address}&startblock={startblock}&page=1&offset={logs}&sort={sort}&apikey={bsc_apikey}&tag=latest'
+            response=requests.get(url)
+            transactions = []
+            for i in response.json()['result']:
+                ts = int(i['timeStamp'])
+                temp = {
+                    'dateTime': datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S'),
+                    'from': i['from'],
+                    'to': i['to'],
+                    'tokenID': int(i['tokenID']),
+                    'tokenSymbol': i['tokenSymbol'],
+                    'blocknumber':i['blockNumber'],
+                    'hash':i['hash'],
+                    'method': i['input'][:10]}
+                transactions.append(temp)
+            df_bscscan=pd.DataFrame(transactions)    
+            incomplete=False
+        except:
+            time.sleep(2)
     return df_bscscan
 #print(nfttoken_bscscan_data('0xc2dea142de50b58f2dc82f2cafda9e08c3323d53',10000,'asc',0)) 
